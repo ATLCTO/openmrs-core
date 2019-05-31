@@ -214,7 +214,7 @@ public final class Listener extends ContextLoader implements ServletContextListe
 			return true;
 		}
 		
-		return DatabaseUpdater.updatesRequired() && !DatabaseUpdater.allowAutoUpdate();
+		return !Context.isMultiTenant() && !DatabaseUpdater.allowAutoUpdate() && DatabaseUpdater.updatesRequired();
 	}
 	
 	/**

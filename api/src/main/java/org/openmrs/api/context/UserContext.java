@@ -83,6 +83,11 @@ public class UserContext implements Serializable {
 	 * The authentication scheme for this user
 	 */
 	private AuthenticationScheme authenticationScheme;
+
+	/**
+	 * The multi-tenant identifier
+	 */
+	private String tenantId;
 	
 	/**
 	 * Creates a user context based on the provided auth. scheme.
@@ -483,5 +488,22 @@ public class UserContext implements Serializable {
 	    for(UserSessionListener userSessionListener : Context.getRegisteredComponents(UserSessionListener.class)) {
 		    userSessionListener.loggedInOrOut(user, event, status);
 	    }
-    }
+	}
+
+	/**
+	 * @return multi-tenant identifier for this user context if any is set
+	 * @since 2.3
+	 */
+	public String getTenantId() {
+		return tenantId;
+	}
+	
+	/**
+	 * @param location multi-tenant identifier to set to
+	 * @since 2.3
+	 */
+	public void setTenantId(String tenantId) {
+		this.tenantId = tenantId;
+	}
+	
 }

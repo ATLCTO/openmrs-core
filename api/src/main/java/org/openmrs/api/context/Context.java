@@ -1166,6 +1166,12 @@ public class Context {
 	 *      the required question/datatypes
 	 */
 	private static void checkForDatabaseUpdates(Properties props) throws DatabaseUpdateException, InputRequiredException {
+		
+		if (isMultiTenant()) {
+			log.info("checkForDatabaseUpdates not run in multi-tenantany");
+			return;
+		}
+		
 		boolean updatesRequired;
 		try {
 			updatesRequired = DatabaseUpdater.updatesRequired();
@@ -1390,5 +1396,15 @@ public class Context {
 	 */
 	public static boolean isUseSystemClassLoader() {
 		return getServiceContext().isUseSystemClassLoader();
+	}
+
+	/**
+	 * @return true if openmrs is running multi-tenant mode
+	 */
+	public static boolean isMultiTenant() { 
+		String allowAutoUpdate = Context.getRuntimeProperties().getProperty(
+		    OpenmrsConstants.MULTI_TENANT_STRATEGY_RUNTIME_PROPERTY, "none");
+		
+		return !"none".equals(allowAutoUpdate);
 	}
 }

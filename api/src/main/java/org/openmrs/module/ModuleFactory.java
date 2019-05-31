@@ -695,35 +695,40 @@ public class ModuleFactory {
 						extensions.add(ext);
 					}
 				}
-				
-				// run the module's sql update script
-				// This and the property updates are the only things that can't
-				// be undone at startup, so put these calls after any other
-				// calls that might hinder startup
-				SortedMap<String, String> diffs = SqlDiffFileParser.getSqlDiffs(module);
-				
-				try {
-					// this method must check and run queries against the database.
-					// to do this, it must be "authenticated".  Give the current
-					// "user" the proxy privilege so this can be done. ("user" might
-					// be nobody because this is being run at startup)
-					Context.addProxyPrivilege("");
+
+				// don't apply database changes in multi-tenantancy, 
+				// they must be installed manually to each database
+				if (!Context.isMultiTenant()) {
+
+					// run the module's sql update script
+					// This and the property updates are the only things that can't
+					// be undone at startup, so put these calls after any other
+					// calls that might hinder startup
+					SortedMap<String, String> diffs = SqlDiffFileParser.getSqlDiffs(module);
 					
-					for (Map.Entry<String, String> entry : diffs.entrySet()) {
-						String version = entry.getKey();
-						String sql = entry.getValue();
-						if (StringUtils.hasText(sql)) {
-							runDiff(module, version, sql);
+					try {
+						// this method must check and run queries against the database.
+						// to do this, it must be "authenticated".  Give the current
+						// "user" the proxy privilege so this can be done. ("user" might
+						// be nobody because this is being run at startup)
+						Context.addProxyPrivilege("");
+						
+						for (Map.Entry<String, String> entry : diffs.entrySet()) {
+							String version = entry.getKey();
+							String sql = entry.getValue();
+							if (StringUtils.hasText(sql)) {
+								runDiff(module, version, sql);
+							}
 						}
 					}
+					finally {
+						// take the "authenticated" privilege away from the current "user"
+						Context.removeProxyPrivilege("");
+					}
+					
+					// run module's optional liquibase.xml immediately after sqldiff.xml
+					runLiquibase(module);
 				}
-				finally {
-					// take the "authenticated" privilege away from the current "user"
-					Context.removeProxyPrivilege("");
-				}
-				
-				// run module's optional liquibase.xml immediately after sqldiff.xml
-				runLiquibase(module);
 				
 				// effectively mark this module as started successfully
 				getStartedModulesMap().put(moduleId, module);

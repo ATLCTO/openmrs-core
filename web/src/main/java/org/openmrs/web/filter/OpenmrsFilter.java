@@ -17,11 +17,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.UserContext;
 import org.openmrs.util.OpenmrsClassLoader;
 import org.openmrs.web.WebConstants;
+import org.openmrs.web.filter.util.MultiTenantIdentifierResolver;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -62,13 +65,13 @@ public class OpenmrsFilter extends OncePerRequestFilter {
 		
 		// used by htmlInclude tag
 		httpRequest.setAttribute(WebConstants.INIT_REQ_UNIQUE_ID, String.valueOf(System.currentTimeMillis()));
-		
+	
 		if (log.isDebugEnabled()) {
 			log.debug("requestURI " + httpRequest.getRequestURI());
 			log.debug("requestURL " + httpRequest.getRequestURL());
 			log.debug("request path info " + httpRequest.getPathInfo());
 		}
-		
+
 		// User context is created if it doesn't already exist and added to the session
 		// note: this usercontext storage logic is copied to webinf/view/uncaughtexception.jsp to 
 		// 		 prevent stack traces being shown to non-authenticated users
@@ -77,16 +80,33 @@ public class OpenmrsFilter extends OncePerRequestFilter {
 		// default the session username attribute to anonymous
 		httpSession.setAttribute("username", "-anonymous user-");
 		
+		// we resolve the tenantId early in the the filter process
+		// because authentication depends on being able to connect to the
+		// appropriate tenant database. 
+		String tenantId = MultiTenantIdentifierResolver.resolveTenantId(httpRequest);
+		if (userContext != null) {
+			if (!StringUtils.equals(tenantId, userContext.getTenantId())) {
+				log.info("clearing userContext from tenantId mis-match");
+				
+				// this context was for a different tenant; don't use the context 
+				//  and force a new context to be created.
+				userContext = null;
+			}
+		}
+
 		// if there isn't a userContext on the session yet, create one
 		// and set it onto the session
 		if (userContext == null) {
 			userContext = new UserContext(Context.getAuthenticationScheme());
+
+			userContext.setTenantId(tenantId);
 			httpSession.setAttribute(WebConstants.OPENMRS_USER_CONTEXT_HTTPSESSION_ATTR, userContext);
 			
 			if (log.isDebugEnabled()) {
 				log.debug("Just set user context " + userContext + " as attribute on session");
 			}
 		} else {
+
 			// set username as attribute on session so parent servlet container 
 			// can identify sessions easier
 			User user = userContext.getAuthenticatedUser();
@@ -94,7 +114,7 @@ public class OpenmrsFilter extends OncePerRequestFilter {
 				httpSession.setAttribute("username", user.getUsername());
 			}
 		}
-		
+
 		// set the locale on the session (for the servlet container as well)
 		httpSession.setAttribute("locale", userContext.getLocale());
 		

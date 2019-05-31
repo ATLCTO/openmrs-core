@@ -446,7 +446,9 @@ public class OpenmrsUtil {
 		
 		// Override the default "openmrs" database name
 		val = p.getProperty("connection.database_name", null);
-		if (val == null) {
+		if (val != null) {
+			OpenmrsConstants.DATABASE_NAME = val;
+		} else {
 			// the database name wasn't supplied explicitly, guess it
 			// from the connection string
 			val = p.getProperty("connection.url", null);
@@ -460,6 +462,11 @@ public class OpenmrsUtil {
 					int startIndex = val.lastIndexOf("/", endIndex);
 					val = val.substring(startIndex + 1, endIndex);
 					OpenmrsConstants.DATABASE_NAME = val;
+
+					if ("@DBNAME@".equals(val)) {
+						log.error(MarkerFactory.getMarker("FATAL"), "Database name cannot be configured from 'connection.url' ."
+					        + "Either supply 'connection.database_name' or correct the url");
+					}
 				}
 				catch (Exception e) {
 					log.error(MarkerFactory.getMarker("FATAL"), "Database name cannot be configured from 'connection.url' ."

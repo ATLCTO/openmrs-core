@@ -1830,6 +1830,11 @@ public class InitializationFilter extends StartupFilter {
 			if (connectionPassword == null) {
 				return true;
 			}
+
+			String connectionDatabase = props.getProperty("connection.database_name");
+			if (connectionDatabase != null) {
+				databaseConnectionFinalUrl = databaseConnectionFinalUrl.replace("@DBNAME@", connectionDatabase);
+			}
 			
 			Connection connection = null;
 			try {

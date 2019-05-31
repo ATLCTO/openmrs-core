@@ -618,6 +618,12 @@ public final class OpenmrsConstants {
 	 * Global property that stores the base url for the application.
 	 */
 	public static final String GP_HOST_URL = "host.url";
+
+	/**
+	 * The name of the runtime property that a user can set which stategy to use to determine the
+	 * multi-tenant identifier
+	 */
+	public static final String MULTI_TENANT_STRATEGY_RUNTIME_PROPERTY = "multitentant.strategy";
 	
 	/**
 	 * At OpenMRS startup these global properties/default values/descriptions are inserted into the

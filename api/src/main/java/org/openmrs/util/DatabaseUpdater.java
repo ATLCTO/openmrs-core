@@ -413,7 +413,12 @@ public class DatabaseUpdater {
 		String username = props.getProperty("hibernate.connection.username");
 		String password = props.getProperty("hibernate.connection.password");
 		String url = props.getProperty("hibernate.connection.url");
-		
+		String database = props.getProperty("hibernate.connection.database_name");
+
+		if (database != null) { 
+			url = url.replace("@DBNAME@", database);
+		}
+
 		// hack for mysql to make sure innodb tables are created
 		if (url.contains("mysql") && !url.contains("InnoDB")) {
 			url = url + "&sessionVariables=default_storage_engine=InnoDB";
